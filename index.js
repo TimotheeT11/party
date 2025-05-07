@@ -3,7 +3,7 @@ const COHORT = "/2504-FTB-EB-WEB-FT";
 const RESOURCE = "/events";
 const API = BASE + COHORT + RESOURCE;
 
-/**
+/** Event Objects
  * @typedef Event
  * @property {number} id ID of the event
  * @property {string} name Event name
@@ -13,14 +13,26 @@ const API = BASE + COHORT + RESOURCE;
  */
 
 let events = [];
+let selectedEvent;
 
 async function getEvents() {
   try {
     const response = await fetch(API);
     const json = await response.json();
-    console.log("events =", events);
     events = json.data;
     console.log("events =", events);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function getEvent(id) {
+  try {
+    const response = await fetch(API + "/" + id);
+    const json = await response.json();
+    selectedEvent = json.data;
+    render();
+    console.log(selectedEvent);
   } catch (error) {
     console.error(error);
   }
@@ -36,7 +48,10 @@ function EventList() {
     $li.innerHTML = `
     <a>${event.name}</a>
     `;
-    // TODO: ADD EVENT LISTENER TO LIST ITEMS
+
+    $li.querySelector("a").addEventListener("click", () => {
+      getEvent(event.id);
+    });
 
     return $li;
     });
@@ -46,7 +61,25 @@ function EventList() {
   return $ul;
 }
 
-function render () {
+function EventDetails() {
+  if (!selectedEvent) {
+    const $p = document.createElement("p");
+    $p.textContent = "Please select an artist to learn more.";
+    return $p;
+  }
+
+  const $event = document.createElement("section");
+  $event.innerHTML = `
+    <h3>${selectedEvent.name} #${selectedEvent.id}</h3>
+    <p>${selectedEvent.date}</p>
+    <p>${selectedEvent.location}</p>
+    <p>${selectedEvent.description}</p>
+  `;
+
+  return $event;
+}
+
+function render() {
   const $app = document.querySelector("#app");
 
   $app.innerHTML = `
@@ -56,12 +89,17 @@ function render () {
         <h2>Upcoming Parties</h2>
         <EventList></EventList>
       </section>
+      <section id="selected">
+        <h2>Party Details</h2>
+        <EventDetails></EventDetails>
+      </section>
     </main>
   `;
   $app.querySelector("EventList").replaceWith(EventList());
+  $app.querySelector("EventDetails").replaceWith(EventDetails());
 }
 
-async function init () {
+async function init() {
   await getEvents();
   render();
 }
